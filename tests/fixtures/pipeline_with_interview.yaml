@@ -1,0 +1,86 @@
+pipeline:
+  name: test-campaign-pipeline
+  version: "1.0"
+  description: Test pipeline with interview stage for campaign orchestration
+
+metadata:
+  created: "2026-03-25"
+  department: marketing
+  tenant: ceremonia
+
+stages:
+  - name: interview
+    type: interview
+    engine: clawinterview
+    description: Initial discovery and input resolution
+    config:
+      bypass_interview_questions: false
+      max_turns: 10
+      mode: auto
+      allow_skip_optional: true
+      contract_path: fixtures/valid_contract.yaml
+    timeout: 600
+    on_failure: halt
+
+  - name: strategy
+    type: command
+    description: Strategy formulation based on interview outputs
+    command: "echo 'Strategy stage placeholder'"
+    depends_on: [interview]
+    inputs:
+      campaign_topic: "{{ stages.interview.outputs.webinar_topic }}"
+      target_audience: "{{ stages.interview.outputs.target_audience }}"
+    timeout: 300
+    on_failure: halt
+
+  - name: copy
+    type: command
+    description: Copy generation based on strategy
+    command: "echo 'Copy stage placeholder'"
+    depends_on: [strategy]
+    timeout: 300
+    on_failure: halt
+
+  - name: assets
+    type: command
+    description: Asset generation (HTML, images, etc.)
+    command: "echo 'Asset generation placeholder'"
+    depends_on: [copy]
+    timeout: 600
+    on_failure: continue
+
+  - name: review
+    type: command
+    description: Review and approval stage
+    command: "echo 'Review stage placeholder'"
+    depends_on: [assets]
+    timeout: 1200
+    on_failure: halt
+
+participating_targets:
+  - id: marketing/webinar-architect
+    name: Webinar Architect
+    contract_path: fixtures/valid_contract.yaml
+    required: true
+  - id: marketing/copywriter
+    name: Copywriter
+    contract_path: null
+    required: false
+
+inputs:
+  campaign_topic:
+    type: string
+    description: Campaign topic passed through pipeline
+    source: interview.outputs.webinar_topic
+  target_audience:
+    type: string
+    description: Target audience from interview
+    source: interview.outputs.target_audience
+
+outputs:
+  discovery_brief:
+    type: object
+    source: interview.outputs.discovery_brief
+  final_assets:
+    type: list
+    source: assets.outputs.generated_files

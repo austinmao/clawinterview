@@ -1,0 +1,84 @@
+tenant_id: ceremonia
+version: "1.0"
+description: Tenant-specific overlay for Ceremonia that customizes interview behavior and input resolution
+
+additional_facets:
+  - compliance
+  - retreat_context
+  - medical_screening
+  - cohort_capacity
+
+resolver_overrides:
+  default_strategies:
+    - user_args
+    - user_message
+    - memory
+    - tenant_file
+    - rag
+    - ask
+  prefer_tenant_file_over_memory: true
+  prefer_recent_over_default: true
+  cache_resolution_results: true
+
+input_customizations:
+  target_audience:
+    resolution_strategies: [user_message, memory, tenant_file, rag, ask]
+    confidence_threshold: 0.8
+    freshness_policy: "14d"
+  offer_type:
+    default_value: "retreat"
+    ask_policy: only_if_unresolved
+  cohort_size:
+    type: number
+    description: "Ceremonoia-specific: retreat cohort size (max 25)"
+    facets: [cohort_capacity, retreat_context]
+    resolution_strategies: [user_args, memory, tenant_file]
+    confidence_threshold: 0.9
+  medical_screening_required:
+    type: boolean
+    description: Whether medical screening is required
+    facets: [medical_screening, compliance]
+    resolution_strategies: [tenant_file, user_args]
+    confidence_threshold: 0.95
+
+evidence_policy:
+  require_freshness: "30d"
+  require_source_trust: 0.6
+  medical_screening_source_trust: 0.95
+
+custom_completion_rules:
+  all_of:
+    - require: campaign_topic
+    - require: target_audience
+    - require: offer_type
+    - confidence_threshold: 0.85
+    - any_of:
+        - require: cohort_size
+        - require: medical_screening_required
+
+memory_search_config:
+  namespaces:
+    - "ceremonia:shared"
+    - "ceremonia:campaigns"
+  search_limit: 10
+  freshness_policy: "30d"
+
+tenant_files:
+  - path: "config/ceremonia/brand-voice.md"
+    facet: brand
+    freshness: "90d"
+  - path: "config/ceremonia/retreat-types.yaml"
+    facet: retreat_context
+    freshness: "7d"
+  - path: "config/ceremonia/medical-guidelines.md"
+    facet: medical_screening
+    freshness: "30d"
+  - path: "config/ceremonia/compliance-checklist.yaml"
+    facet: compliance
+    freshness: "365d"
+
+security_gates:
+  require_approval_for_audience: "internal"
+  require_approval_for_medical: true
+  disable_web_resolver: false
+  require_source_verification: true

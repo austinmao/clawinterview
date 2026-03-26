@@ -1,0 +1,47 @@
+department: sales
+description: Sales department interview contract defaults
+
+default_inputs:
+  required:
+    - name: prospect_context
+      type: string
+      facets: [audience, tenant_context]
+      confidence_threshold: 0.7
+      help: "Who is this prospect? What is their current situation or company context?"
+    - name: offer_type
+      type: string
+      facets: [offer]
+      confidence_threshold: 0.7
+      help: "What product, service, or package is being offered?"
+  optional:
+    - name: pricing_tier
+      type: string
+      facets: [offer]
+      confidence_threshold: 0.5
+      help: "Which pricing tier or payment plan applies?"
+    - name: urgency_level
+      type: string
+      facets: [schedule]
+      confidence_threshold: 0.5
+      help: "What is the urgency or timeline for this opportunity?"
+
+default_facets:
+  - audience
+  - offer
+  - schedule
+  - compliance
+  - proof
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - memory
+  - tenant_file
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "prospect_context resolved with confidence >= 0.7"
+    - "offer_type resolved with confidence >= 0.7"
+    - "compliance facet resolved"
+    - "proof (case study, testimonial, etc.) facet resolved"

@@ -1,0 +1,48 @@
+department: platform
+description: Platform department interview contract defaults
+
+default_inputs:
+  required:
+    - name: system_scope
+      type: string
+      facets: [topic, tenant_context]
+      confidence_threshold: 0.7
+      help: "What system or subsystem is being changed? (e.g., 'Gateway v2026.3.14', 'ClawWrap outbound gate')"
+    - name: change_type
+      type: enum
+      values: [feature, bugfix, refactor, infrastructure, security, deprecation]
+      facets: [tenant_context]
+      confidence_threshold: 0.7
+      help: "What type of change is this?"
+  optional:
+    - name: affected_services
+      type: list
+      facets: [asset]
+      confidence_threshold: 0.5
+      help: "Which services or components are affected?"
+    - name: rollback_plan
+      type: string
+      facets: [compliance]
+      confidence_threshold: 0.5
+      help: "What is the rollback or recovery plan?"
+
+default_facets:
+  - topic
+  - tenant_context
+  - asset
+  - compliance
+  - schedule
+
+default_resolution_strategies:
+  - user_args
+  - pipeline_state
+  - memory
+  - tenant_file
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "system_scope resolved with confidence >= 0.7"
+    - "change_type resolved with confidence >= 0.7"
+    - "asset facet resolved (architecture doc, migration plan, or tech spec)"
+    - "compliance facet resolved (security review or rollback plan)"

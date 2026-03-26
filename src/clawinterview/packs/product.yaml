@@ -1,0 +1,48 @@
+department: product
+description: Product department interview contract defaults
+
+default_inputs:
+  required:
+    - name: product_area
+      type: string
+      facets: [topic]
+      confidence_threshold: 0.7
+      help: "What product area or surface? (e.g., 'dashboard', 'mobile app', 'API')"
+    - name: user_persona
+      type: string
+      facets: [audience]
+      confidence_threshold: 0.7
+      help: "Who is the primary user? (e.g., 'retreat organizer', 'participant', 'admin')"
+  optional:
+    - name: design_constraints
+      type: string
+      facets: [asset, brand]
+      confidence_threshold: 0.5
+      help: "Any design constraints? (e.g., 'mobile-first', 'dark mode required', 'brand compliance')"
+    - name: platform_target
+      type: string
+      facets: [tenant_context]
+      confidence_threshold: 0.5
+      help: "Which platform? (e.g., 'web', 'iOS', 'Android', 'cross-platform')"
+
+default_facets:
+  - topic
+  - audience
+  - brand
+  - asset
+  - tenant_context
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - memory
+  - tenant_file
+  - rag
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "product_area resolved with confidence >= 0.7"
+    - "user_persona resolved with confidence >= 0.7"
+    - "brand facet resolved (design system reference or brand guide)"
+    - "asset facet resolved (wireframe, design comp, or spec)"

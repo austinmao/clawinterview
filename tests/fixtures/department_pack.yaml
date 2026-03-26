@@ -1,0 +1,65 @@
+department: marketing
+version: "1.0"
+description: Marketing department pack with shared input defaults and resolution strategy templates
+
+default_inputs:
+  required:
+    - id: campaign_topic
+      type: string
+      description: Core topic or theme for the marketing asset
+      facets: [topic, positioning]
+      resolution_strategies: [user_args, user_message, tenant_file, ask]
+      confidence_threshold: 0.8
+    - id: target_audience
+      type: string
+      description: Primary audience segment and their problem
+      facets: [audience]
+      resolution_strategies: [user_message, memory, tenant_file, ask]
+      confidence_threshold: 0.7
+  optional:
+    - id: brand_voice
+      type: string
+      description: Brand voice profile or guidelines to follow
+      facets: [brand]
+      resolution_strategies: [tenant_file, memory]
+      confidence_threshold: 0.9
+    - id: cta_type
+      type: enum
+      description: Call-to-action type (book, signup, download, register)
+      facets: [cta]
+      resolution_strategies: [user_args, user_message]
+      confidence_threshold: 0.6
+    - id: offer_type
+      type: string
+      description: Type of offer (webinar, guide, consultation, free-trial)
+      facets: [offer]
+      resolution_strategies: [user_message, memory, tenant_file]
+      confidence_threshold: 0.7
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - memory
+  - tenant_file
+  - rag
+  - ask
+
+default_facets:
+  - topic
+  - audience
+  - brand
+  - cta
+  - offer
+  - positioning
+  - proof
+
+completion_heuristics:
+  all_of:
+    - require: campaign_topic
+    - require: target_audience
+    - confidence_threshold: 0.75
+
+evidence_policy:
+  require_freshness: "30d"
+  require_source_trust: 0.6
+  prefer_recent_over_default: true

@@ -1,0 +1,54 @@
+contracts:
+  interview:
+    version: "1.0"
+    required_inputs:
+      - id: webinar_topic
+        type: string
+        description: Working title or core webinar topic
+        facets: [topic, positioning]
+        resolution_strategies: [user_args, user_message, tenant_file, rag, ask]
+        confidence_threshold: 0.8
+      - id: target_audience
+        type: string
+        description: Intended audience and interior problem
+        facets: [audience]
+        resolution_strategies: [user_message, memory, tenant_file, rag, ask]
+        confidence_threshold: 0.7
+    optional_inputs:
+      - id: cohost
+        type: string
+        description: Partner or co-host if present
+        facets: [partner]
+        resolution_strategies: [user_args, user_message, web, ask]
+        confidence_threshold: 0.5
+      - id: webinar_date
+        type: date
+        description: Scheduled date for the webinar
+        facets: [schedule]
+        resolution_strategies: [user_args, user_message, pipeline_state]
+        freshness_policy: "7d"
+      - id: budget
+        type: money
+        description: Budget allocation for webinar production
+        facets: [budget]
+        resolution_strategies: [user_args, memory, tenant_file]
+        confidence_threshold: 0.6
+    produces_outputs:
+      - id: discovery_brief
+        type: object
+        facets: [brief, upstream_output]
+      - id: positioning_statement
+        type: string
+        facets: [positioning]
+      - id: audience_profile
+        type: object
+        facets: [audience]
+    completion_rules:
+      all_of:
+        - require: webinar_topic
+        - require: target_audience
+        - confidence_threshold: 0.75
+    semantic_facets: [topic, audience, schedule, partner, brief, positioning, budget]
+    evidence_policy:
+      require_freshness: "30d"
+      require_source_trust: 0.6

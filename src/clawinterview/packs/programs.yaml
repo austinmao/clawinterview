@@ -1,0 +1,47 @@
+department: programs
+description: Programs department interview contract defaults
+
+default_inputs:
+  required:
+    - name: program_name
+      type: string
+      facets: [topic, tenant_context]
+      confidence_threshold: 0.7
+      help: "What is the program or event name? (e.g., 'Spring Retreat 2026')"
+    - name: participant_segment
+      type: string
+      facets: [audience]
+      confidence_threshold: 0.7
+      help: "Who are the participants? (e.g., 'alumni', 'new members', 'VIP cohort')"
+  optional:
+    - name: retreat_date
+      type: date
+      facets: [schedule]
+      confidence_threshold: 0.5
+      help: "When is the program scheduled?"
+    - name: medical_requirements
+      type: string
+      facets: [compliance]
+      confidence_threshold: 0.5
+      help: "Any medical screening or health requirements for participants?"
+
+default_facets:
+  - topic
+  - audience
+  - schedule
+  - compliance
+  - tenant_context
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - memory
+  - tenant_file
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "program_name resolved with confidence >= 0.7"
+    - "participant_segment resolved with confidence >= 0.7"
+    - "schedule facet resolved (date or registration window)"
+    - "compliance facet resolved (medical, liability, or explicitly marked not-required)"

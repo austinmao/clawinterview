@@ -1,0 +1,44 @@
+department: finance
+description: Finance department interview contract defaults
+
+default_inputs:
+  required:
+    - name: report_type
+      type: string
+      facets: [topic]
+      confidence_threshold: 0.7
+      help: "What type of report? (e.g., cash flow, P&L, headcount, burn rate)"
+    - name: reporting_period
+      type: string
+      facets: [schedule]
+      confidence_threshold: 0.7
+      help: "What period does this cover? (e.g., March 2026, Q1 2026, YTD)"
+  optional:
+    - name: department_filter
+      type: string
+      facets: [tenant_context]
+      confidence_threshold: 0.5
+      help: "Should the report be filtered to a specific department?"
+    - name: compliance_standard
+      type: string
+      facets: [compliance]
+      confidence_threshold: 0.5
+      help: "Any compliance or accounting standard required? (e.g., GAAP, IFRS)"
+
+default_facets:
+  - topic
+  - schedule
+  - compliance
+  - tenant_context
+
+default_resolution_strategies:
+  - user_args
+  - pipeline_state
+  - tenant_file
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "report_type resolved with confidence >= 0.7"
+    - "reporting_period resolved with confidence >= 0.7"
+    - "compliance facet resolved or explicitly marked not-applicable"

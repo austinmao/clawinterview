@@ -1,0 +1,18 @@
+# This file contains multiple intentional validation errors for testing error handling
+contracts:
+  interview:
+    version: "1.0"
+    # ERROR: Missing required_inputs entirely
+    optional_inputs:
+      - id: some_input
+        type: not_a_real_type  # ERROR: Invalid type not in PrimitiveType enum
+        description: This has an invalid type
+      - id: invalid-id
+        # ERROR: id does not follow snake_case pattern (contains hyphen)
+        type: string
+        description: Invalid id format
+    # ERROR: Missing produces_outputs
+    completion_rules:
+      # ERROR: Using undeclared input reference
+      require: unknown_input_id
+    # ERROR: No semantic_facets (optional but good practice)

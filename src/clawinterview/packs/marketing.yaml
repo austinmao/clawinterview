@@ -1,0 +1,53 @@
+department: marketing
+description: Marketing department interview contract defaults
+
+default_inputs:
+  required:
+    - name: campaign_topic
+      type: string
+      facets: [topic, positioning]
+      confidence_threshold: 0.7
+      help: "What is the main topic or positioning angle for this campaign?"
+    - name: target_audience
+      type: string
+      facets: [audience]
+      confidence_threshold: 0.7
+      help: "Who is the primary target audience for this campaign?"
+  optional:
+    - name: brand_voice
+      type: string
+      facets: [brand]
+      confidence_threshold: 0.5
+      help: "Should this follow a specific brand voice or tone?"
+    - name: cta_type
+      type: string
+      facets: [cta]
+      confidence_threshold: 0.5
+      help: "What type of call-to-action? (e.g., sign-up, purchase, learn-more)"
+    - name: offer_details
+      type: string
+      facets: [offer]
+      confidence_threshold: 0.5
+      help: "What offer, discount, or incentive is being presented?"
+
+default_facets:
+  - topic
+  - audience
+  - brand
+  - cta
+  - offer
+  - positioning
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - memory
+  - tenant_file
+  - rag
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "campaign_topic resolved with confidence >= 0.7"
+    - "target_audience resolved with confidence >= 0.7"
+    - "at least 4 of [brand, cta, offer, positioning] facets resolved"

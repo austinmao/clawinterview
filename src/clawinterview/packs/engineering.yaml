@@ -1,0 +1,46 @@
+department: engineering
+description: Engineering department interview contract defaults
+
+default_inputs:
+  required:
+    - name: feature_scope
+      type: string
+      facets: [topic]
+      confidence_threshold: 0.7
+      help: "What feature or component are we building? Describe the scope."
+    - name: tech_stack
+      type: string
+      facets: [tenant_context]
+      confidence_threshold: 0.7
+      help: "What technology stack or platform does this use?"
+  optional:
+    - name: performance_target
+      type: string
+      facets: [asset]
+      confidence_threshold: 0.5
+      help: "Are there performance targets or constraints? (e.g., latency, throughput)"
+    - name: dependency_list
+      type: list
+      facets: [tenant_context]
+      confidence_threshold: 0.5
+      help: "What external dependencies or services must be integrated?"
+
+default_facets:
+  - topic
+  - tenant_context
+  - asset
+  - schedule
+
+default_resolution_strategies:
+  - user_args
+  - user_message
+  - pipeline_state
+  - memory
+  - ask
+
+completion_heuristics:
+  all_of:
+    - "feature_scope resolved with confidence >= 0.7"
+    - "tech_stack resolved with confidence >= 0.7"
+    - "asset facet resolved (design, API spec, or architecture diagram)"
+    - "schedule facet resolved (timeline or sprint target)"
