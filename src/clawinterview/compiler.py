@@ -105,9 +105,12 @@ def compile_run_contract(
                         original_id=spec.id,
                         owner_target=target_id,
                         type=spec.type,
+                        description=spec.description,
                         facets=spec.facets,
                         resolution_strategies=strategies,
                         confidence_threshold=spec.confidence_threshold,
+                        depends_on=spec.depends_on,
+                        default_value=spec.default_value,
                         blocking=blocking,
                         producer_mapping=producer,
                     )

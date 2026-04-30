@@ -112,10 +112,12 @@ class InterviewEngine:
             spec = InputSpec(
                 id=compiled_input.id,
                 type=compiled_input.type,
-                description=compiled_input.id.replace("_", " ").capitalize(),
+                description=compiled_input.description or compiled_input.id.replace("_", " ").capitalize(),
                 facets=list(compiled_input.facets),
                 resolution_strategies=list(compiled_input.resolution_strategies),
                 confidence_threshold=compiled_input.confidence_threshold,
+                depends_on=list(compiled_input.depends_on),
+                default_value=compiled_input.default_value,
             )
             resolution = resolve_input(self._registry, spec, context)
             state.resolutions[compiled_input.id] = resolution
@@ -311,11 +313,13 @@ class InterviewEngine:
             spec = InputSpec(
                 id=compiled_input.id,
                 type=compiled_input.type,
-                description=compiled_input.id.replace("_", " ").capitalize(),
+                description=compiled_input.description or compiled_input.id.replace("_", " ").capitalize(),
                 facets=list(compiled_input.facets),
                 resolution_strategies=list(compiled_input.resolution_strategies),
                 confidence_threshold=compiled_input.confidence_threshold,
+                depends_on=list(compiled_input.depends_on),
                 freshness_policy=None,
+                default_value=compiled_input.default_value,
             )
 
             # 3. Re-resolve stale inputs.

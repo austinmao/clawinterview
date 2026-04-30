@@ -1,0 +1,24 @@
+contracts:
+  interview:
+    version: "1.0"
+    required_inputs:
+      - id: email_subject_angle
+        type: string
+        description: "The hook or angle for the email subject line"
+        facets: [topic, cta]
+        resolution_strategies: [user_args, upstream_output, ask]
+        confidence_threshold: 0.7
+    optional_inputs:
+      - id: cta_destination
+        type: url
+        description: "Where the call-to-action links to"
+        facets: [cta, asset]
+        resolution_strategies: [user_args, tenant_file, ask]
+        confidence_threshold: 0.5
+    produces_outputs:
+      - id: email_copy
+        type: object
+        facets: [asset]
+    completion_rules:
+      all_of:
+        - require: email_subject_angle

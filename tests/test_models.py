@@ -71,6 +71,7 @@ class TestResolverKind:
         expected = {
             "user_args",
             "user_message",
+            "hyperspell_profile",
             "pipeline_state",
             "memory",
             "tenant_file",
@@ -84,7 +85,7 @@ class TestResolverKind:
         assert actual == expected
 
     def test_member_count(self) -> None:
-        assert len(ResolverKind) == 10
+        assert len(ResolverKind) == 11
 
     def test_string_enum_inherits_str(self) -> None:
         assert isinstance(ResolverKind.ASK, str)

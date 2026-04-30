@@ -1,7 +1,7 @@
 """ClawInterview built-in resolver implementations.
 
 Call ``register_all_resolvers(registry)`` to populate a ResolverRegistry
-with all 10 built-in resolvers in one step.
+with all 11 built-in resolvers in one step.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ from clawinterview.resolver import ResolverRegistry
 
 from clawinterview.resolvers import (
     ask,
+    hyperspell_profile,
     infer,
     memory,
     pipeline_state,
@@ -26,9 +27,10 @@ __all__ = ["register_all_resolvers"]
 
 
 def register_all_resolvers(registry: ResolverRegistry) -> None:
-    """Register all 10 built-in resolvers into the given registry."""
+    """Register all 11 built-in resolvers into the given registry."""
     registry.register(ResolverKind.USER_ARGS, user_args.resolve)
     registry.register(ResolverKind.USER_MESSAGE, user_message.resolve)
+    registry.register(ResolverKind.HYPERSPELL_PROFILE, hyperspell_profile.resolve)
     registry.register(ResolverKind.PIPELINE_STATE, pipeline_state.resolve)
     registry.register(ResolverKind.MEMORY, memory.resolve)
     registry.register(ResolverKind.TENANT_FILE, tenant_file.resolve)

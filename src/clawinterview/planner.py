@@ -130,6 +130,7 @@ def plan_next_turn(state: InterviewState) -> InterviewTurn | None:
                 recommendation=recommendation,
                 options=options,
                 question=question,
+                resolved_inputs=[target_id],
             )
 
     return None
@@ -274,10 +275,12 @@ def _find_input_spec(state: InterviewState, input_id: str) -> InputSpec | None:
             return InputSpec(
                 id=compiled_input.id,
                 type=compiled_input.type,
-                description=compiled_input.id.replace("_", " ").capitalize(),
+                description=compiled_input.description or compiled_input.id.replace("_", " ").capitalize(),
                 facets=list(compiled_input.facets),
                 resolution_strategies=list(compiled_input.resolution_strategies),
                 confidence_threshold=compiled_input.confidence_threshold,
+                depends_on=list(compiled_input.depends_on),
+                default_value=compiled_input.default_value,
             )
     return None
 

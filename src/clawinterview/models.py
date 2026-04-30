@@ -39,6 +39,7 @@ class PrimitiveType(str, Enum):
 class ResolverKind(str, Enum):
     USER_ARGS = "user_args"
     USER_MESSAGE = "user_message"
+    HYPERSPELL_PROFILE = "hyperspell_profile"
     PIPELINE_STATE = "pipeline_state"
     MEMORY = "memory"
     TENANT_FILE = "tenant_file"
@@ -186,9 +187,12 @@ class CompiledInput(BaseModel):
     original_id: str
     owner_target: str
     type: PrimitiveType
+    description: str = ""
     facets: list[SemanticFacet] = []
     resolution_strategies: list[ResolverKind] = []
     confidence_threshold: float = 0.7
+    depends_on: list[str] = []
+    default_value: Any = None
     blocking: bool = True
     stage_needed_by: str = ""
     producer_mapping: str | None = None
