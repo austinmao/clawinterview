@@ -1,0 +1,31 @@
+contracts:
+  interview:
+    version: "1.0"
+    required_inputs:
+      - id: campaign_topic
+        type: string
+        description: "The core topic or theme for this campaign"
+        facets: [topic, positioning]
+        resolution_strategies: [user_args, user_message, tenant_file, ask]
+        confidence_threshold: 0.8
+      - id: target_audience
+        type: string
+        description: "Who is this campaign for and what interior problem does it address"
+        facets: [audience]
+        resolution_strategies: [user_args, user_message, memory, ask]
+        confidence_threshold: 0.7
+    optional_inputs:
+      - id: campaign_tone
+        type: string
+        description: "Desired tone and energy level for the campaign"
+        facets: [brand]
+        resolution_strategies: [tenant_file, memory, ask]
+        confidence_threshold: 0.6
+    produces_outputs:
+      - id: strategy_brief
+        type: object
+        facets: [brief]
+    completion_rules:
+      all_of:
+        - require: campaign_topic
+        - require: target_audience

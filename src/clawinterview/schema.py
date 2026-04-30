@@ -182,6 +182,7 @@ _INTERVIEW_CONTRACT_SCHEMA: dict = {
             "enum": [
                 "user_args",
                 "user_message",
+                "hyperspell_profile",
                 "pipeline_state",
                 "memory",
                 "tenant_file",

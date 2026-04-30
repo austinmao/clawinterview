@@ -134,6 +134,62 @@ class TestFullInterviewLoop:
         assert state.status == InterviewStatus.COMPLETE
         assert engine.is_complete(state)
 
+    def test_process_response_tracks_the_input_for_each_turn(self) -> None:
+        """Responses bind to the input the current turn actually asked about."""
+        engine = InterviewEngine(registry=empty_registry())
+
+        contracts = [
+            (
+                "target_a",
+                make_contract(
+                    required=[
+                        make_input("business_type", [SemanticFacet.TENANT_CONTEXT]),
+                        make_input("primary_priority", [SemanticFacet.BRAND]),
+                        make_input("team_involvement", [SemanticFacet.TENANT_CONTEXT]),
+                    ]
+                ),
+            ),
+        ]
+
+        state = engine.start("pl-ordered", "run-ordered", contracts, make_context())
+        first_turn = engine.get_current_turn(state)
+        assert first_turn is not None
+        assert first_turn.resolved_inputs == ["business_type"]
+
+        state = engine.process_response(state, "Agency")
+        second_turn = engine.get_current_turn(state)
+        assert second_turn is not None
+        assert second_turn.resolved_inputs == ["team_involvement"]
+
+        state = engine.process_response(state, "Just me plus one teammate")
+        assert state.resolutions["team_involvement"].resolved_value == "Just me plus one teammate"
+        assert state.resolutions["primary_priority"].status != ResolutionStatus.RESOLVED
+
+    def test_question_uses_original_contract_description(self) -> None:
+        """Planner should preserve the authored contract description."""
+        engine = InterviewEngine(registry=empty_registry())
+        contract = InterviewContract(
+            required_inputs=[
+                InputSpec(
+                    id="communication_tone",
+                    type=PrimitiveType.STRING,
+                    description="The communication style Lumina should use, such as professional, warm and casual, or direct and efficient",
+                    facets=[SemanticFacet.BRAND],
+                )
+            ]
+        )
+
+        state = engine.start(
+            "pl-description",
+            "run-description",
+            [("target_a", contract)],
+            make_context(),
+        )
+
+        current_turn = engine.get_current_turn(state)
+        assert current_turn is not None
+        assert "professional, warm and casual" in current_turn.question
+
     def test_resolved_inputs_tracked_in_resolutions(self) -> None:
         """Auto-resolved inputs appear in state.resolutions."""
         registry = registry_with_args({"audience": "founders", "offer": "retreat-7d"})

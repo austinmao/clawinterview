@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -14,9 +15,11 @@ from clawinterview.engine import InterviewEngine
 from clawinterview.models import (
     InterviewContract,
     InterviewStatus,
+    InterviewTurn,
     ResolutionContext,
 )
 from clawinterview.schema import validate_interview_contract
+from clawinterview.state import load_interview_state, save_interview_state
 
 
 # ---------------------------------------------------------------------------
@@ -272,6 +275,209 @@ def cmd_run(path: Path, bypass: bool = False) -> int:
     return 0
 
 
+def _turn_to_dict(turn: InterviewTurn) -> dict[str, Any]:
+    """Serialize an InterviewTurn to a JSON-friendly dict."""
+    return {
+        "number": turn.turn_number,
+        "layer": turn.layer,
+        "summary": turn.summary,
+        "recommendation": turn.recommendation,
+        "options": [opt.model_dump(mode="json") for opt in turn.options],
+        "question": turn.question,
+    }
+
+
+def _state_to_json(state: Any, engine: InterviewEngine) -> dict[str, Any]:
+    """Build the JSON output envelope from an InterviewState."""
+    status_map = {
+        InterviewStatus.AWAITING_INPUT: "awaiting_input",
+        InterviewStatus.COMPLETE: "complete",
+        InterviewStatus.FAILED: "failed",
+    }
+    status_str = status_map.get(state.status, state.status.value)
+
+    turn_dict: dict[str, Any] | None = None
+    current_turn = engine.get_current_turn(state)
+    if current_turn is not None:
+        turn_dict = _turn_to_dict(current_turn)
+
+    brief_dict: dict[str, Any] | None = None
+    if state.brief is not None:
+        brief_dict = state.brief.model_dump(mode="json")
+
+    return {
+        "status": status_str,
+        "run_id": state.run_id,
+        "pipeline_id": state.pipeline_id,
+        "turn": turn_dict,
+        "brief": brief_dict,
+    }
+
+
+def _load_target_contracts(
+    path: Path,
+) -> tuple[str, list[tuple[str, InterviewContract]]] | None:
+    """Load pipeline YAML and discover target contracts.
+
+    Returns (pipeline_id, target_contracts) or None on error.
+    """
+    try:
+        pipeline: dict[str, Any] = yaml.safe_load(path.read_text())
+    except FileNotFoundError:
+        print(
+            json.dumps({"status": "failed", "error": f"pipeline file not found: {path}"}),
+            file=sys.stderr,
+        )
+        return None
+    except yaml.YAMLError as exc:
+        print(
+            json.dumps({"status": "failed", "error": f"invalid YAML in {path}: {exc}"}),
+            file=sys.stderr,
+        )
+        return None
+
+    pipeline_id: str = (
+        pipeline.get("pipeline", {}).get("name", "unknown-pipeline")
+        if isinstance(pipeline.get("pipeline"), dict)
+        else "unknown-pipeline"
+    )
+
+    participating_targets: list[dict[str, Any]] = pipeline.get(
+        "participating_targets", []
+    ) or []
+
+    target_contracts: list[tuple[str, InterviewContract]] = []
+    base_dir = path.parent
+
+    for entry in participating_targets:
+        contract_path_str: str | None = entry.get("contract_path")
+        if not contract_path_str:
+            continue
+
+        contract_file = base_dir / contract_path_str
+        try:
+            raw = yaml.safe_load(contract_file.read_text())
+        except (FileNotFoundError, yaml.YAMLError):
+            continue
+
+        if "contracts" in raw and isinstance(raw.get("contracts"), dict):
+            interview_section = raw["contracts"].get("interview")
+            if interview_section is not None:
+                raw = interview_section
+
+        try:
+            contract = InterviewContract.model_validate(raw)
+        except Exception:
+            continue
+
+        target_id: str = entry.get("id", entry.get("name", "unknown"))
+        target_contracts.append((target_id, contract))
+
+    if not target_contracts:
+        print(
+            json.dumps({
+                "status": "failed",
+                "error": "no participating targets with valid contracts found",
+            }),
+            file=sys.stderr,
+        )
+        return None
+
+    return pipeline_id, target_contracts
+
+
+def cmd_start(path: Path, pipeline_args: dict[str, str] | None = None) -> int:
+    """Start a multi-turn interview session and output JSON.
+
+    Loads pipeline YAML, discovers target contracts, creates a
+    ResolutionContext, starts the interview engine, persists state to
+    ``memory/pipelines/<run_id>/``, and prints JSON to stdout.
+
+    Parameters
+    ----------
+    path:
+        Path to the pipeline YAML file.
+    pipeline_args:
+        Optional key=value pairs passed as pipeline_args in the context.
+
+    Returns
+    -------
+    int
+        0 on success, 1 on error.
+    """
+    result = _load_target_contracts(path)
+    if result is None:
+        return 1
+
+    pipeline_id, target_contracts = result
+
+    import uuid
+
+    run_id = str(uuid.uuid4())[:8]
+    run_dir = Path("memory/pipelines") / run_id
+
+    context = ResolutionContext(
+        run_id=run_id,
+        pipeline_args=pipeline_args or {},
+    )
+    engine = InterviewEngine()
+    state = engine.start(
+        pipeline_id=pipeline_id,
+        run_id=run_id,
+        target_contracts=target_contracts,
+        context=context,
+        run_dir=run_dir,
+    )
+
+    output = _state_to_json(state, engine)
+    print(json.dumps(output, indent=2))
+    return 0
+
+
+def cmd_respond(run_id: str, response: str) -> int:
+    """Respond to an active interview turn and output JSON.
+
+    Loads state from ``memory/pipelines/<run_id>/``, calls
+    ``engine.process_response``, persists updated state, and prints
+    JSON to stdout.
+
+    Parameters
+    ----------
+    run_id:
+        The run_id returned by ``cmd_start``.
+    response:
+        The operator's response text.
+
+    Returns
+    -------
+    int
+        0 on success, 1 on error.
+    """
+    run_dir = Path("memory/pipelines") / run_id
+
+    state = load_interview_state(run_dir)
+    if state is None:
+        print(
+            json.dumps({
+                "status": "failed",
+                "error": f"no interview state found for run_id={run_id}",
+            }),
+            file=sys.stderr,
+        )
+        return 1
+
+    engine = InterviewEngine()
+    state = engine.process_response(
+        state=state,
+        response=response,
+        run_dir=run_dir,
+    )
+
+    output = _state_to_json(state, engine)
+    print(json.dumps(output, indent=2))
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
@@ -322,6 +528,27 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip human questions",
     )
 
+    # start command — multi-turn, outputs JSON
+    start_p = sub.add_parser(
+        "start",
+        help="Start a multi-turn interview session (outputs JSON)",
+    )
+    start_p.add_argument("pipeline", help="Path to pipeline YAML")
+    start_p.add_argument(
+        "--args",
+        nargs="*",
+        metavar="key=value",
+        help="Pipeline arguments as key=value pairs",
+    )
+
+    # respond command — advance a multi-turn interview, outputs JSON
+    respond_p = sub.add_parser(
+        "respond",
+        help="Respond to an active interview turn (outputs JSON)",
+    )
+    respond_p.add_argument("run_id", help="Run ID from a previous start")
+    respond_p.add_argument("response", help="Operator response text")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
@@ -330,6 +557,16 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_compile(Path(args.pipeline))
     elif args.command == "run":
         return cmd_run(Path(args.pipeline), bypass=args.bypass)
+    elif args.command == "start":
+        pipeline_args: dict[str, str] = {}
+        if args.args:
+            for pair in args.args:
+                if "=" in pair:
+                    k, v = pair.split("=", 1)
+                    pipeline_args[k] = v
+        return cmd_start(Path(args.pipeline), pipeline_args=pipeline_args or None)
+    elif args.command == "respond":
+        return cmd_respond(args.run_id, args.response)
     else:
         parser.print_help()
         return 1

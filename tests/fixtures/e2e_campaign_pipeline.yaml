@@ -1,0 +1,19 @@
+pipeline:
+  name: e2e-test-campaign
+  version: "1.0"
+  description: E2E test pipeline for multi-turn interview
+
+stages:
+  - name: interview
+    type: interview
+    engine: clawinterview
+  - name: generate
+    type: command
+    command: "echo 'Generate campaign assets'"
+    depends_on: [interview]
+
+participating_targets:
+  - id: campaign-strategist
+    contract_path: e2e_campaign_strategist_contract.yaml
+  - id: email-copywriter
+    contract_path: e2e_email_copywriter_contract.yaml

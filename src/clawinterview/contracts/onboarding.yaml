@@ -1,0 +1,62 @@
+version: "1.0"
+required_inputs:
+  - id: business_type
+    type: string
+    description: The business category that best describes your company, such as coaching, consulting, e-commerce, agency, or SaaS
+    facets: [tenant_context]
+    resolution_strategies: [hyperspell_profile, ask]
+    confidence_threshold: 0.8
+
+  - id: primary_priority
+    type: string
+    description: The top priority you want Lumina to help with first, such as customer communication, scheduling, content creation, or lead management
+    resolution_strategies: [ask]
+    confidence_threshold: 0.8
+
+  - id: communication_tone
+    type: string
+    description: The communication style Lumina should use, such as professional, warm and casual, or direct and efficient
+    facets: [brand]
+    resolution_strategies: [ask]
+    confidence_threshold: 0.7
+
+  - id: team_involvement
+    type: string
+    description: Who will use Lumina day to day, whether that is just you or other people on your team as well
+    facets: [tenant_context]
+    resolution_strategies: [hyperspell_profile, ask]
+    confidence_threshold: 0.7
+
+optional_inputs:
+  - id: brand_description
+    type: string
+    description: A short description of your brand or business for someone new
+    facets: [brand]
+    resolution_strategies: [hyperspell_profile, ask]
+    confidence_threshold: 0.6
+
+  - id: channel_preferences
+    type: string
+    description: Any additional communication channels you rely on besides the ones already connected, such as WhatsApp, email, or social media
+    facets: [tenant_context]
+    resolution_strategies: [hyperspell_profile, ask]
+    confidence_threshold: 0.6
+
+produces_outputs:
+  - id: onboarding_context
+    type: object
+    facets: [brief, tenant_context]
+  - id: onboarding_preferences
+    type: object
+    facets: [brief, brand]
+
+completion_rules:
+  all_of:
+    - require: business_type
+    - require: primary_priority
+    - require: communication_tone
+    - require: team_involvement
+
+semantic_facets: [tenant_context, brand, brief]
+evidence_policy:
+  require_freshness: "30d"

@@ -37,6 +37,7 @@ ResolverFn = Callable[[InputSpec, ResolutionContext], ResolutionResult | None]
 MANDATORY_PRECEDENCE: tuple[ResolverKind, ...] = (
     ResolverKind.USER_ARGS,
     ResolverKind.USER_MESSAGE,
+    ResolverKind.HYPERSPELL_PROFILE,
     ResolverKind.PIPELINE_STATE,
     ResolverKind.MEMORY,
     ResolverKind.TENANT_FILE,
